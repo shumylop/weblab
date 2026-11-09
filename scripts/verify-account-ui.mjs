@@ -71,15 +71,13 @@ try {
     );
     console.log(
       'Validation:',
-      await teacher
-        .locator('input')
-        .evaluateAll((inputs) =>
-          inputs.map((input) => ({
-            label: input.closest('label')?.textContent?.trim(),
-            valid: input.validity.valid,
-            message: input.validationMessage,
-          })),
-        ),
+      await teacher.locator('input').evaluateAll((inputs) =>
+        inputs.map((input) => ({
+          label: input.closest('label')?.textContent?.trim(),
+          valid: input.validity.valid,
+          message: input.validationMessage,
+        })),
+      ),
     );
     throw error;
   }

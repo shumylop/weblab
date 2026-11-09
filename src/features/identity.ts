@@ -4,6 +4,4 @@ export function loginEmail(username: string) {
     throw new Error('Логін: 3–32 латинські літери, цифри, крапка, _ або -.');
   return `${normalized}@login.weblab.invalid`;
 }
-export function validPassword(password: string) {
-  return password.length >= 12 && password.length <= 128;
-}
+export { validPassword } from '../../supabase/functions/manage-students/password-policy';

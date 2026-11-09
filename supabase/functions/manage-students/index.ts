@@ -1,3 +1,4 @@
+import { validPassword } from './password-policy.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.100.0';
 const cors = {
   'Access-Control-Allow-Origin': 'https://shumylop.github.io',
@@ -60,11 +61,10 @@ Deno.serve(async (req) => {
         !nickname ||
         nickname.length > 40 ||
         typeof password !== 'string' ||
-        password.length < 12 ||
-        password.length > 128
+        !validPassword(password, 'student')
       )
         return respond(
-          { error: 'Перевір логін, псевдонім і пароль (12–128 символів).' },
+          { error: 'Перевір логін, псевдонім і пароль (6–128 символів).' },
           400,
         );
       const { data, error } = await admin.auth.admin.createUser({
@@ -116,10 +116,12 @@ Deno.serve(async (req) => {
     if (body.action === 'password') {
       if (
         typeof body.password !== 'string' ||
-        body.password.length < 12 ||
-        body.password.length > 128
+        !validPassword(body.password, 'student')
       )
-        return respond({ error: 'Пароль має містити 12–128 символів.' }, 400);
+        return respond(
+          { error: 'Пароль учня має містити 6–128 символів.' },
+          400,
+        );
       const { error } = await admin.auth.admin.updateUserById(student.id, {
         password: body.password,
       });

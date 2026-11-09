@@ -57,8 +57,10 @@ async function login() {
 }
 async function create() {
   await action(async () => {
-    if (!validPassword(studentPassword.value))
-      throw new Error('Пароль має містити 12–128 символів.');
+    if (!validPassword(studentPassword.value, 'student'))
+      throw new Error(
+        'Пароль учня: від 6 до 128 символів, без вимог до складності.',
+      );
     await manageStudents({
       action: 'create',
       username: studentLogin.value,
@@ -73,8 +75,8 @@ async function create() {
   });
 }
 function generate() {
-  const bytes = crypto.getRandomValues(new Uint8Array(18));
-  const alphabet = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!-';
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
+  const alphabet = 'abcdefghijkmnpqrstuvwxyz23456789';
   studentPassword.value = Array.from(
     bytes,
     (b) => alphabet[b % alphabet.length],
@@ -82,8 +84,10 @@ function generate() {
 }
 async function reset() {
   await action(async () => {
-    if (!validPassword(resetPassword.value))
-      throw new Error('Пароль має містити 12–128 символів.');
+    if (!validPassword(resetPassword.value, 'student'))
+      throw new Error(
+        'Пароль учня: від 6 до 128 символів, без вимог до складності.',
+      );
     await manageStudents({
       action: 'password',
       id: resetId.value,
@@ -185,8 +189,14 @@ onMounted(() => {
         <form
           @submit.prevent="
             action(async () => {
-              if (!validPassword(newPassword))
-                throw new Error('Потрібно 12–128 символів.');
+              if (
+                !validPassword(newPassword, isTeacher ? 'teacher' : 'student')
+              )
+                throw new Error(
+                  isTeacher
+                    ? 'Потрібно 12–128 символів.'
+                    : 'Потрібно 6–128 символів.',
+                );
               await changePassword(newPassword);
               newPassword = '';
               message = 'Твій пароль змінено.';
@@ -198,7 +208,7 @@ onMounted(() => {
               v-model="newPassword"
               type="password"
               autocomplete="new-password"
-              minlength="12"
+              :minlength="isTeacher ? 12 : 6"
               maxlength="128"
               required /></label
           ><button class="btn btn-secondary" :disabled="busy">
@@ -257,9 +267,9 @@ onMounted(() => {
                 maxlength="40"
                 required /></label
             ><label class="field"
-              >Початковий пароль<input
+              >Початковий пароль (від 6 символів)<input
                 v-model="studentPassword"
-                minlength="12"
+                minlength="6"
                 maxlength="128"
                 required
                 autocomplete="off"
@@ -330,7 +340,7 @@ onMounted(() => {
               }}<input
                 v-model="resetPassword"
                 type="password"
-                minlength="12"
+                minlength="6"
                 maxlength="128"
                 required
                 autocomplete="new-password" /></label

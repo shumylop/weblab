@@ -14,3 +14,12 @@ describe('Логіни без персональної пошти', () => {
     expect(validPassword('a'.repeat(129))).toBe(false);
   });
 });
+
+it('приймає простий пароль учня від 6 символів без вимог до складності', () => {
+  expect(validPassword('123456', 'student')).toBe(true);
+  expect(validPassword('abcdef', 'student')).toBe(true);
+  expect(validPassword('12345', 'student')).toBe(false);
+  expect(validPassword('a'.repeat(128), 'student')).toBe(true);
+  expect(validPassword('a'.repeat(129), 'student')).toBe(false);
+  expect(validPassword('123456', 'teacher')).toBe(false);
+});
