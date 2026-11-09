@@ -59,7 +59,30 @@ try {
   await teacher
     .getByRole('button', { name: 'Створити учня', exact: true })
     .click();
-  await teacher.getByRole('status').filter({ hasText: 'створено' }).waitFor();
+  try {
+    await teacher
+      .getByRole('status')
+      .filter({ hasText: 'створено' })
+      .waitFor({ timeout: 10000 });
+  } catch (error) {
+    console.log(
+      'Form feedback:',
+      await teacher.getByRole('status').allTextContents(),
+    );
+    console.log(
+      'Validation:',
+      await teacher
+        .locator('input')
+        .evaluateAll((inputs) =>
+          inputs.map((input) => ({
+            label: input.closest('label')?.textContent?.trim(),
+            valid: input.validity.valid,
+            message: input.validationMessage,
+          })),
+        ),
+    );
+    throw error;
+  }
   id = (await invoke({ action: 'list' })).students.find(
     (s) => s.username === username,
   ).id;

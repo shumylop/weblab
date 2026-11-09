@@ -33,3 +33,21 @@ create policy own_progress_update on public.weblab_progress for update to authen
 ) with check (
  user_id = (select auth.uid()) and exists (select 1 from public.weblab_accounts a where a.id = (select auth.uid()) and a.enabled)
 );
+
+-- Read only the caller's session creation time: an old refresh token cannot
+-- regain access after the teacher issues a new password.
+create schema if not exists weblab_private;
+revoke all on schema weblab_private from public;
+grant usage on schema weblab_private to authenticated;
+create or replace function weblab_private.valid_session() returns boolean
+language sql stable security definer set search_path = '' as $$
+ select exists (
+  select 1 from auth.sessions s join public.weblab_accounts a on a.id = s.user_id
+  where s.id = nullif((select auth.jwt()->>'session_id'),'')::uuid
+  and s.user_id = (select auth.uid()) and a.enabled
+  and extract(epoch from s.created_at) >= a.valid_after
+ );
+$$;
+revoke all on function weblab_private.valid_session() from public, anon;
+grant execute on function weblab_private.valid_session() to authenticated;
+alter policy own_account on public.weblab_accounts using (id = (select auth.uid()) and (select weblab_private.valid_session()));

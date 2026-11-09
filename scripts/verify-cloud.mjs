@@ -150,6 +150,12 @@ try {
     (await student.from('weblab_progress').select('*')).data,
     [],
   );
+  const refreshed = await student.auth.refreshSession();
+  if (!refreshed.error)
+    assert.deepEqual(
+      (await student.from('weblab_progress').select('*')).data,
+      [],
+    );
   assert.ifError(
     (
       await other.auth.signInWithPassword({
