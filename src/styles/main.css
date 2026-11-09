@@ -3641,3 +3641,103 @@ main {
   overflow: clip;
   padding-bottom: 8px;
 }
+.auth-card {
+  max-width: 520px;
+  margin: 0 auto;
+}
+.auth-card h2 {
+  margin: 16px 0;
+}
+.auth-card > p {
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+.auth-card form {
+  margin-top: 25px;
+}
+.account-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+}
+.account-summary h2 small {
+  font-size: 13px;
+  color: #786783;
+}
+.account-summary p {
+  font-size: 12px;
+  margin-top: 8px;
+}
+.account-settings,
+.teacher-create,
+.student-list {
+  margin-top: 24px;
+}
+.teacher-create > p {
+  font-size: 12px;
+  margin: 14px 0 24px;
+}
+.cloud-status {
+  padding: 12px 16px;
+  background: #edf7f1;
+  border-radius: 9px;
+  margin-bottom: 20px;
+  font-size: 12px;
+  color: #397451;
+}
+.cloud-status a {
+  text-decoration: underline;
+}
+.student-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  border-top: 1px solid #eae3ef;
+  padding: 20px 0;
+  flex-wrap: wrap;
+}
+.student-row p {
+  font-size: 12px;
+  color: #76647e;
+  margin-top: 7px;
+}
+.student-list > p {
+  margin-top: 20px;
+}
+.password-reset {
+  width: 100%;
+  padding: 18px;
+  background: #faf6ff;
+  border-radius: 10px;
+}
+.password-reset input {
+  max-width: 400px;
+}
+.account-settings .row {
+  flex-wrap: wrap;
+}
+@media (max-width: 540px) {
+  .account-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .student-row > .row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .student-row .btn {
+    font-size: 10px;
+  }
+  .topbar-right {
+    gap: 8px;
+  }
+  .topbar-right > .text-button {
+    font-size: 10px;
+    max-width: 120px;
+  }
+  .topbar-right .profile-picker {
+    display: none;
+  }
+}

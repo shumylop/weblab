@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { account, importToAccount } from '../features/cloud';
 import {
   Download,
   Upload,
@@ -51,10 +52,13 @@ async function importFile(event: Event) {
       );
     if (
       confirm(
-        'Замінити всі локальні профілі даними з файлу? Спочатку експортуй поточні дані, якщо хочеш їх залишити.',
+        account.value
+          ? 'Замінити свій онлайн-прогрес активним профілем із JSON? Інші профілі файлу не імпортуються. Збережи резервну копію поточних змін.'
+          : 'Замінити всі локальні профілі даними з файлу? Спочатку експортуй поточні дані, якщо хочеш їх залишити.',
       )
     ) {
-      replaceDatabase(value);
+      if (account.value) importToAccount(value);
+      else replaceDatabase(value);
       feedback.value = 'Прогрес і профілі успішно імпортовано.';
     }
   } catch (error) {
@@ -96,7 +100,7 @@ function reset() {
     <div v-if="feedback" class="feedback" role="status">{{ feedback }}</div>
     <div v-if="storageWarning" class="warning">{{ storageWarning }}</div>
     <div class="settings-grid">
-      <section class="card">
+      <section v-if="!account" class="card">
         <HardDrive class="section-icon" :size="26" />
         <h2>Локальні профілі</h2>
         <p class="muted">
@@ -126,8 +130,16 @@ function reset() {
         <ShieldCheck class="section-icon" :size="26" />
         <h2>Резервна копія</h2>
         <p class="muted">
-          Дані зберігаються лише в поточному браузері. Вони не синхронізуються
-          між пристроями та можуть зникнути після очищення даних сайту.
+          {{
+            account
+              ? 'В обліковому записі прогрес зберігається онлайн.'
+              : 'Дані зберігаються лише в поточному браузері.'
+          }}
+          {{
+            account
+              ? 'JSON допоможе зберегти окрему резервну копію.'
+              : 'Вони не синхронізуються між пристроями та можуть зникнути після очищення даних сайту.'
+          }}
         </p>
         <div class="backup-actions">
           <button class="btn btn-primary" @click="exportProgress">
@@ -144,8 +156,12 @@ function reset() {
           /></label>
         </div>
         <p class="tiny-note">
-          Файл містить усі локальні профілі, їхні уроки, код та ідеї. Імпорт
-          перевіряє структуру й запитує підтвердження заміни.
+          {{
+            account
+              ? 'Файл містить прогрес поточного облікового запису.'
+              : 'Файл містить усі локальні профілі, їхні уроки, код та ідеї.'
+          }}
+          Імпорт перевіряє структуру й запитує підтвердження заміни.
         </p>
       </section>
       <section class="card reset-card">

@@ -9,6 +9,7 @@ import type {
   Project,
 } from '../types';
 const KEY = 'web-lab:v1';
+export const accountMode = ref(false);
 export const emptyProgress = (): LessonProgress => ({
   stage: 0,
   theory: false,
@@ -137,6 +138,10 @@ let timer: ReturnType<typeof setTimeout>;
 export function persist() {
   clearTimeout(timer);
   try {
+    if (accountMode.value) {
+      saveState.value = 'Зміни в обліковому записі';
+      return;
+    }
     localStorage.setItem(KEY, JSON.stringify(db));
     saveState.value = 'Збережено на пристрої';
   } catch {
@@ -222,4 +227,18 @@ export function replaceDatabase(value: Database) {
 }
 export function addProject(project: Project) {
   profile.value.projects.unshift(project);
+}
+
+// Account data stays in memory on shared school computers; guest data is separate.
+export function restoreGuest() {
+  let guest: Database;
+  try {
+    guest = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (!validateImport(guest)) guest = freshDatabase();
+  } catch {
+    guest = freshDatabase();
+  }
+  db.profiles = guest.profiles;
+  db.activeId = guest.activeId;
+  accountMode.value = false;
 }

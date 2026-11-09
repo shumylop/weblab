@@ -26,6 +26,7 @@ import {
   Sparkles,
   CheckCircle2,
   CircleHelp,
+  ShieldCheck,
 } from 'lucide-vue-next';
 import { lessons } from './content';
 import {
@@ -41,6 +42,18 @@ import Playground from './components/Playground.vue';
 import ProjectsView from './components/ProjectsView.vue';
 import SettingsView from './components/SettingsView.vue';
 import { documentHtml } from './content/helpers';
+import AccountView from './components/AccountView.vue';
+import {
+  account,
+  cloudStatus,
+  cloudError,
+  cloudBusy,
+  initCloud,
+  isTeacher,
+} from './features/cloud';
+onMounted(() => {
+  void initCloud();
+});
 const hash = ref(location.hash || '#/');
 const menu = ref(false);
 const screenQuery = window.matchMedia('(max-width: 740px)');
@@ -72,6 +85,12 @@ const lesson = computed(() =>
   lessons.find((l) => l.id === Number(route.value[1])),
 );
 const nav = [
+  {
+    id: 'account',
+    href: '#/account',
+    title: 'Мій обліковий запис',
+    icon: ShieldCheck,
+  },
   { id: 'home', href: '#/', title: 'Головна', icon: LayoutDashboard },
   {
     id: 'roadmap',
@@ -152,7 +171,7 @@ function status(id: number) {
       id="sidebar"
       class="sidebar"
       :class="{ open: menu }"
-      :inert="(smallScreen && !menu) || undefined"
+      :inert="(smallScreen && !menu) || cloudBusy || undefined"
     >
       <a href="#/" class="brand"
         ><span class="brand-mark"
@@ -208,7 +227,10 @@ function status(id: number) {
       aria-label="Закрити меню"
       @click="menu = false"
     ></button>
-    <div class="main-shell" :inert="(smallScreen && menu) || undefined">
+    <div
+      class="main-shell"
+      :inert="(smallScreen && menu) || cloudBusy || undefined"
+    >
       <header class="topbar">
         <div class="row">
           <button
@@ -232,7 +254,7 @@ function status(id: number) {
         <div class="topbar-right">
           <span class="saved-indicator"
             ><CheckCircle2 :size="14" />{{ saveState }}</span
-          ><label class="profile-picker"
+          ><label v-if="!account" class="profile-picker"
             ><span class="avatar">{{
               profile.name.slice(0, 1).toUpperCase()
             }}</span
@@ -242,6 +264,10 @@ function status(id: number) {
               </option></select
             ><ChevronDown :size="14"
           /></label>
+          <a v-if="account" href="#/account" class="text-button"
+            >{{ account.nickname }} · {{ isTeacher ? 'Викладач' : 'Учень' }}</a
+          >
+          <a v-else href="#/account" class="text-button">Увійти</a>
         </div>
       </header>
       <main
@@ -253,7 +279,17 @@ function status(id: number) {
         <div v-if="storageWarning" class="warning" role="alert">
           {{ storageWarning }} <a href="#/settings">Зберегти копію</a>
         </div>
-        <template v-if="page === 'home' || page === 'roadmap'">
+        <div v-if="cloudBusy" class="feedback" role="status">
+          Завантажуємо обліковий запис…
+        </div>
+        <div v-if="cloudError" class="warning" role="alert">
+          {{ cloudError }} <a href="#/account">До облікового запису</a>
+        </div>
+        <p v-if="account" class="cloud-status" role="status">
+          {{ cloudStatus }} · <a href="#/account">Керувати збереженням</a>
+        </p>
+        <AccountView v-if="page === 'account'" />
+        <template v-else-if="page === 'home' || page === 'roadmap'">
           <template v-if="page === 'home'"
             ><div class="greeting">
               <span
