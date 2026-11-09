@@ -55,7 +55,7 @@ try {
   await teacher
     .getByLabel('Псевдонім', { exact: true })
     .fill('Перевірка WEB LAB');
-  await teacher.getByLabel('Початковий пароль', { exact: true }).fill(password);
+  await teacher.getByLabel('Початковий пароль (від 6 символів)', { exact: true }).fill(password);
   await teacher
     .getByRole('button', { name: 'Створити учня', exact: true })
     .click();
