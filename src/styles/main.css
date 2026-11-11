@@ -3741,3 +3741,31 @@ main {
     display: none;
   }
 }
+.student-progress {
+  width: 100%;
+  padding: 14px 16px;
+  background: #f8f5fc;
+  border-radius: 10px;
+}
+.student-progress h3 {
+  margin: 0;
+  font-size: 13px;
+}
+.student-progress ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+.student-progress li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: #edf7f1;
+  color: #306849;
+  font-size: 12px;
+  border-radius: 6px;
+}

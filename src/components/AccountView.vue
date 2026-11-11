@@ -1,9 +1,15 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { LogIn, LogOut, Plus, RefreshCw, ShieldCheck } from 'lucide-vue-next';
+import { ref, watch } from 'vue';
+import {
+  Check,
+  LogIn,
+  LogOut,
+  Plus,
+  RefreshCw,
+  ShieldCheck,
+} from 'lucide-vue-next';
 import {
   account,
-  client,
   cloudConfigured,
   cloudBusy,
   signIn,
@@ -15,6 +21,8 @@ import {
   saveCloud,
 } from '../features/cloud';
 import { validPassword } from '../features/identity';
+import { lessons } from '../content';
+import type { Lesson } from '../types';
 const confirm = window.confirm.bind(window);
 const username = ref('');
 const password = ref('');
@@ -29,8 +37,11 @@ interface Student {
   username: string;
   nickname: string;
   enabled: boolean;
+  completedLessonIds: number[];
 }
-const students = ref<Student[]>([]);
+const students = ref<(Student & { completedLessons: Lesson[] })[]>([]);
+const studentsLoading = ref(false);
+const studentsError = ref(false);
 const resetId = ref('');
 const resetPassword = ref('');
 async function action(fn: () => Promise<void>) {
@@ -45,14 +56,33 @@ async function action(fn: () => Promise<void>) {
   }
 }
 async function list() {
-  students.value = (await manageStudents({ action: 'list' })).students;
+  const teacherId = account.value?.id;
+  if (!isTeacher.value || studentsLoading.value) return;
+  studentsLoading.value = true;
+  studentsError.value = false;
+  try {
+    const result: { students: Student[] } = await manageStudents({
+      action: 'list',
+    });
+    if (account.value?.id !== teacherId) return;
+    students.value = result.students.map((student) => {
+      const completed = new Set(student.completedLessonIds ?? []);
+      return {
+        ...student,
+        completedLessons: lessons.filter((lesson) => completed.has(lesson.id)),
+      };
+    });
+  } catch {
+    if (account.value?.id === teacherId) studentsError.value = true;
+  } finally {
+    studentsLoading.value = false;
+  }
 }
 async function login() {
   await action(async () => {
     await signIn(username.value, password.value);
     password.value = '';
     message.value = 'Вітаємо! Твій прогрес завантажено.';
-    if (isTeacher.value) await list();
   });
 }
 async function create() {
@@ -98,9 +128,17 @@ async function reset() {
     message.value = 'Новий пароль установлено. Передай його учню особисто.';
   });
 }
-onMounted(() => {
-  if (isTeacher.value) void action(list);
-});
+watch(
+  [isTeacher, cloudBusy],
+  ([teacher, restoring]) => {
+    if (teacher && !restoring) void list();
+    if (!teacher) {
+      students.value = [];
+      studentsError.value = false;
+    }
+  },
+  { immediate: true },
+);
 </script>
 <template>
   <div class="page-heading">
@@ -276,7 +314,7 @@ onMounted(() => {
             /></label>
           </div>
           <div class="row">
-            <button class="btn btn-primary" :disabled="busy">
+            <button class="btn btn-primary" :disabled="busy || studentsLoading">
               <Plus :size="16" />Створити учня</button
             ><button type="button" class="btn btn-quiet" @click="generate">
               Згенерувати пароль
@@ -287,11 +325,25 @@ onMounted(() => {
       <section class="card student-list">
         <div class="row space-between">
           <h2>Мої учні · {{ students.length }}</h2>
-          <button class="btn btn-quiet" :disabled="busy" @click="action(list)">
+          <button
+            class="btn btn-quiet"
+            :disabled="busy || studentsLoading"
+            @click="list"
+          >
             <RefreshCw :size="16" />Оновити
           </button>
         </div>
-        <p v-if="!students.length" class="muted">
+        <p class="muted small">
+          Тут видно уроки, які учні завершили та зберегли онлайн.
+        </p>
+        <p v-if="studentsLoading" class="muted" role="status">
+          Завантажуємо прогрес…
+        </p>
+        <p v-else-if="studentsError" class="warning" role="alert">
+          Не вдалося оновити список учнів. Натисни «Оновити», щоб спробувати ще
+          раз.
+        </p>
+        <p v-else-if="!students.length" class="muted">
           Ще немає учнів. Створи перший доступ вище.
         </p>
         <article
@@ -315,7 +367,7 @@ onMounted(() => {
               Новий пароль</button
             ><button
               class="btn btn-secondary"
-              :disabled="busy"
+              :disabled="busy || studentsLoading"
               @click="
                 action(async () => {
                   await manageStudents({
@@ -329,6 +381,21 @@ onMounted(() => {
             >
               {{ student.enabled ? 'Вимкнути доступ' : 'Увімкнути доступ' }}
             </button>
+          </div>
+          <div class="student-progress">
+            <h3>
+              Пройдено {{ student.completedLessons.length }} з
+              {{ lessons.length }} уроків
+            </h3>
+            <ul
+              v-if="student.completedLessons.length"
+              aria-label="Пройдені уроки"
+            >
+              <li v-for="lesson in student.completedLessons" :key="lesson.id">
+                <Check :size="14" aria-hidden="true" />{{ lesson.title }}
+              </li>
+            </ul>
+            <p v-else>Ще немає завершених уроків.</p>
           </div>
           <form
             v-if="resetId === student.id"

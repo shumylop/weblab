@@ -1,3 +1,4 @@
+import { completedLessonIds } from './lesson-progress.ts';
 import { validPassword } from './password-policy.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.100.0';
 const cors = {
@@ -48,7 +49,28 @@ Deno.serve(async (req) => {
         .order('created_at', { ascending: false })
         .limit(500);
       if (error) throw error;
-      return respond({ students: data });
+      const students = data ?? [];
+      const completed = new Map<string, number[]>();
+      // Keep filters small and select lesson state only, excluding code and projects.
+      for (let offset = 0; offset < students.length; offset += 75) {
+        const ids = students
+          .slice(offset, offset + 75)
+          .map((student) => student.id);
+        const { data: rows, error: progressError } = await admin
+          .from('weblab_progress')
+          .select('user_id,lessons:payload->profiles->0->lessons')
+          .in('user_id', ids);
+        if (progressError) throw progressError;
+        for (const row of rows ?? []) {
+          completed.set(row.user_id, completedLessonIds(row.lessons));
+        }
+      }
+      return respond({
+        students: students.map((student) => ({
+          ...student,
+          completedLessonIds: completed.get(student.id) ?? [],
+        })),
+      });
     }
     if (body.action === 'create') {
       const username = String(body.username || '')
