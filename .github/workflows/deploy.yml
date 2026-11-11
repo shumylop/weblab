@@ -21,10 +21,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run test
-      - name: Install Chromium for browser tests
-        timeout-minutes: 5
-        run: npx playwright install --with-deps --only-shell chromium
+      # The pinned Ubuntu image already ships Chrome and its dependencies.
       - run: npm run test:e2e
+        env:
+          WEBLAB_CI_CHROME: "1"
       - run: npm run build
         env:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/

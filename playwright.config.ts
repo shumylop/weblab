@@ -12,5 +12,13 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
   },
   use: { baseURL: 'http://127.0.0.1:5187', trace: 'retain-on-failure' },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: process.env.WEBLAB_CI_CHROME === '1' ? 'chrome' : undefined,
+      },
+    },
+  ],
 });
