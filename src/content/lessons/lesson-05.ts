@@ -4,7 +4,7 @@ export default {
   id: 5,
   title: 'Створюємо сучасний макет',
   description:
-    'Розклади картки за допомогою Flexbox і подружи сайт із телефоном.',
+    'Випробуй перенесення карток і самостійно виправ макет для телефона.',
   estimatedDuration: 55,
   tag: 'МАКЕТ',
   color: 'teal',
@@ -34,17 +34,16 @@ export default {
     {
       id: 'layout',
       instructions: [
-        'Збережи три картки в одному контейнері .cards.',
-        'Задай контейнеру display: flex і ненульовий gap.',
-        'Додай flex-wrap: wrap або media query з flex-direction: column для вузького екрана.',
-        'Перевір вигляд у режимах комп’ютера й телефона.',
+        'У CSS зроби .cards Flexbox-контейнером і додай проміжок між картками.',
+        'Перемкни перегляд на телефон і знайди картку, яка виходить за край.',
+        'Дозволь карткам переноситися й перевір, чи видно довгий заголовок у режимах телефона та комп’ютера.',
       ],
       starterHtml: documentHtml(
-        '  <h1>Моя колекція ідей</h1>\n  <section class="cards">\n    <article class="card"><h2>Досліджуй</h2><p>Знаходь нове.</p></article>\n    <article class="card"><h2>Створюй</h2><p>Дай ідеї форму.</p></article>\n    <article class="card"><h2>Ділися</h2><p>Розкажи свою історію.</p></article>\n  </section>',
+        '  <h1>Моя колекція ідей</h1>\n  <section class="cards">\n    <article class="card"><h2>Досліджуй</h2><p>Знаходь нове.</p></article>\n    <article class="card"><h2>Створюй</h2><p>Дай ідеї форму.</p></article>\n    <article class="card"><h2>Поділися відкриттям із друзями</h2><p>Розкажи свою історію.</p></article>\n  </section>',
         'Мої картки',
       ),
       starterCss:
-        '* { box-sizing: border-box; }\nbody { font-family: system-ui; padding: 24px; background: #f7f5ff; }\n.cards {\n  /* Увімкни Flexbox, проміжки та перенесення */\n}\n.card { flex: 1 1 180px; padding: 24px; border-radius: 16px; background: #e7dfff; min-width: 0; }',
+        '* { box-sizing: border-box; }\nbody { margin: 0; font-family: system-ui; padding: 16px; background: #f7f5ff; }\n.cards {\n  /* Напиши правила для контейнера */\n}\n.card { flex: 1 0 min(136px, 100%); padding: 16px; border-radius: 16px; background: #e7dfff; min-width: 0; overflow-wrap: anywhere; }',
       validationRules: [
         el('.cards > *', 'Додай щонайменше три картки в .cards.', { min: 3 }),
         css('.cards', 'display', 'Контейнеру потрібен display: flex.', {
@@ -62,10 +61,10 @@ export default {
         }),
       ],
       hints: [
-        'Властивості display, gap і flex-wrap записують для батьківського контейнера .cards.',
-        'Спробуй flex-wrap: wrap разом із flex: 1 1 180px для карток.',
+        'Шукай .cards у редакторі CSS. Саме контейнер вирішує, як розкласти картки.',
+        'Запиши display: flex і gap: 12px у .cards. Дозволь перенесення за допомогою flex-wrap: wrap.',
       ],
-      successMessage: 'Три картки, один гнучкий макет. Спробуй вузький екран!',
+      successMessage: 'Макет пройшов перевірку. Подивись, як картки виглядають на обох екранах.',
     },
   ],
   quizQuestions: [

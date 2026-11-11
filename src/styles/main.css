@@ -70,7 +70,7 @@ textarea,
 select {
   font: inherit;
 }
-input:not([type='checkbox']):not([type='range']):not([type='color']),
+input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
 select {
   width: 100%;
   border: 1px solid #dedde7;

@@ -21,9 +21,10 @@ const props = defineProps<{
   modelValue: Code;
   exercise?: Exercise;
   filename?: string;
+  initialTab?: 'html' | 'css';
 }>();
 const emit = defineEmits<{ 'update:modelValue': [code: Code]; passed: [] }>();
-const tab = ref<'html' | 'css'>('html');
+const tab = ref(props.initialTab ?? 'html');
 const view = ref('code');
 const mobile = ref(false);
 const source = ref('');

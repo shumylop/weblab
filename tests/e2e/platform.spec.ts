@@ -133,28 +133,30 @@ test('Афіша клубу: складання, самостійний HTML і 
     page.getByRole('textbox', { name: 'HTML-редактор' }),
   ).toHaveValue(/Мій космос/);
 });
-test('наявна чернетка HTML відкривається без повторного складання', async ({
+test('наявні чернетки місій відкриваються без повторного експерименту', async ({
   page,
 }) => {
   await page.addInitScript((key) => {
+    const legacyProgress = {
+      stage: 2,
+      theory: false,
+      demo: false,
+      practice: false,
+      quiz: 0,
+      quizPassed: false,
+      completed: false,
+    };
     const profile = {
-      id: 'legacy-html',
+      id: 'legacy-missions',
       name: 'Дослідник',
       currentLesson: 2,
-      codes: { html: { html: '<h1>Моя попередня робота</h1>', css: '' } },
+      codes: {
+        html: { html: '<h1>Моя попередня робота</h1>', css: '' },
+        layout: { html: '<div class="cards"></div>', css: '.cards { display: flex; }' },
+      },
       projects: [],
       achievements: [],
-      lessons: {
-        2: {
-          stage: 2,
-          theory: false,
-          demo: false,
-          practice: false,
-          quiz: 0,
-          quizPassed: false,
-          completed: false,
-        },
-      },
+      lessons: { 2: legacyProgress, 5: legacyProgress },
     };
     localStorage.setItem(
       key,
@@ -165,6 +167,72 @@ test('наявна чернетка HTML відкривається без по�
   await expect(
     page.getByRole('textbox', { name: 'HTML-редактор' }),
   ).toHaveValue('<h1>Моя попередня робота</h1>');
+  await page.goto('/#/lesson/5');
+  await expect(
+    page.getByRole('textbox', { name: 'CSS-редактор' }),
+  ).toHaveValue('.cards { display: flex; }');
+});
+test('порятунок сайту: прогноз, дві ширини й самостійний CSS', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/#/lesson/5');
+  await expect(page.getByRole('button', { name: /Виправ CSS/ })).toBeDisabled();
+  await page.getByRole('button', { name: 'Почати місію' }).click();
+  const cards = page.getByRole('list', { name: 'Макет сайту клубу' });
+  const overflows = () =>
+    cards.evaluate((el) => el.scrollWidth > el.clientWidth);
+  await expect.poll(overflows).toBe(true);
+  await page.getByRole('radio', { name: /картки залишаться/ }).check();
+  const checkPrediction = page.getByRole('button', {
+    name: 'Перевірити прогноз',
+  });
+  await checkPrediction.click();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Придивись' }),
+  ).toBeVisible();
+  await page.getByRole('radio', { name: /перейде в наступний ряд/ }).check();
+  await checkPrediction.click();
+  const apply = page.getByRole('button', { name: 'Увімкнути перенесення' });
+  await expect(apply).toBeFocused();
+  await apply.press('Enter');
+  await expect.poll(overflows).toBe(false);
+  const itemRows = () =>
+    cards.getByRole('listitem').evaluateAll((items) =>
+      new Set(items.map((item) => item.getBoundingClientRect().top)).size,
+    );
+  await expect.poll(itemRows).toBe(2);
+  const continueToCss = page.getByRole('button', {
+    name: 'Виправити макет у CSS',
+  });
+  await expect(continueToCss).toHaveCount(0);
+  const desktop = page.getByRole('button', { name: 'Комп’ютер', exact: true });
+  await expect(desktop).toBeFocused();
+  await desktop.press('Enter');
+  await expect.poll(itemRows).toBe(1);
+  await continueToCss.click();
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const editor = page.getByRole('textbox', { name: 'CSS-редактор' });
+  await expect(editor).toBeVisible();
+  await expect(editor).not.toHaveValue(/flex-wrap/);
+  const starter = await editor.inputValue();
+  const preview = page.frameLocator('iframe[title="Результат HTML та CSS"]');
+  const previewOverflows = () =>
+    preview.locator('html').evaluate((el) => el.scrollWidth > el.clientWidth);
+  const check = page.getByRole('button', { name: 'Перевірити завдання' });
+  await editor.fill(starter + '\n.cards { display: flex; gap: 12px; }');
+  await page.getByRole('button', { name: 'Ширина телефона' }).click();
+  await check.click();
+  await expect.poll(previewOverflows).toBe(true);
+  await expect(page.locator('.check-results .success-text')).toHaveCount(0);
+  await editor.fill(await editor.inputValue() + '\n.cards { flex-wrap: wrap; }');
+  await check.click();
+  await expect(page.locator('.check-results .success-text')).toBeVisible();
+  await expect.poll(previewOverflows).toBe(false);
+  await expect(
+    preview.getByRole('heading', { name: 'Поділися відкриттям із друзями' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Ширина комп’ютера' }).click();
+  await expect.poll(previewOverflows).toBe(false);
 });
 test('усі CSS та HTML вправи мають робочі перевірки', async ({ page }) => {
   const content =
@@ -178,15 +246,6 @@ test('усі CSS та HTML вправи мають робочі перевірк
     '<h1 class="title">Моя тема</h1><button>Привіт</button>',
     '.title{color:rebeccapurple}body{background:lightblue}button{padding:12px;border-radius:8px}',
   );
-  await expect(page.locator('.check-results .success-text')).toBeVisible();
-  await openPractice(page, 5);
-  await page.getByRole('button', { name: 'CSS', exact: true }).click();
-  await page
-    .getByRole('textbox', { name: 'CSS-редактор' })
-    .fill('.cards{display:flex;gap:16px;flex-wrap:wrap}.card{flex:1 1 180px}');
-  await page
-    .getByRole('button', { name: 'Перевірити завдання', exact: true })
-    .click();
   await expect(page.locator('.check-results .success-text')).toBeVisible();
   await openPractice(page, 6);
   await edit(

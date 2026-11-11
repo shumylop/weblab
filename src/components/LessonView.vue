@@ -23,12 +23,35 @@ import WebDemo from './WebDemo.vue';
 import ConceptDemo from './ConceptDemo.vue';
 import UrlExercise from './UrlExercise.vue';
 import ClubPoster from './ClubPoster.vue';
+import MobileRescue from './MobileRescue.vue';
+const missions = {
+  2: {
+    title: 'Афіша клубу',
+    intro: 'Клубу потрібна афіша. Спочатку склади назву й опис із блоків, а тоді напиши HTML для своєї події.',
+    experiment: 'Збери афішу',
+    practice: 'Напиши HTML',
+    practiceTitle: 'Напиши HTML для своєї афіші',
+    component: ClubPoster,
+  },
+  5: {
+    title: 'Врятуй сайт на телефоні',
+    intro: 'На телефоні частина карток клубу зникає за краєм екрана. Випробуй перенесення карток і самостійно виправ інший макет у CSS.',
+    experiment: 'Випробуй перенесення',
+    practice: 'Виправ CSS',
+    practiceTitle: 'Полагодь макет колекції ідей',
+    component: MobileRescue,
+  },
+} as const;
 const props = defineProps<{ lesson: Lesson }>();
 const p = computed(() => progress(props.lesson.id));
 const exercise = computed(() => props.lesson.interactiveExercises[0]);
-const posterMission = computed(() => props.lesson.id === 2);
+const mission = computed(() =>
+  props.lesson.id === 2 || props.lesson.id === 5
+    ? missions[props.lesson.id]
+    : undefined,
+);
 // Existing work and completed demonstrations keep their place in the module.
-const canWritePoster = computed(
+const canOpenPractice = computed(
   () =>
     p.value.demo ||
     p.value.practice ||
@@ -37,7 +60,7 @@ const canWritePoster = computed(
 );
 const stage = computed({
   get: () =>
-    posterMission.value && p.value.stage >= 2 && !canWritePoster.value
+    mission.value && p.value.stage >= 2 && !canOpenPractice.value
       ? 1
       : p.value.stage,
   set: (v) => {
@@ -54,19 +77,23 @@ const code = computed({
     profile.value.codes[exercise.value.id] = v;
   },
 });
-const steps = computed(() =>
-  posterMission.value
-    ? ['Знайомство', 'Збери афішу', 'Напиши HTML', 'Мінітест', 'Підсумок']
-    : ['Знайомство', 'Експеримент', 'Практика', 'Мінітест', 'Підсумок'],
-);
+const steps = computed(() => [
+  'Знайомство',
+  mission.value?.experiment ?? 'Експеримент',
+  mission.value?.practice ?? 'Практика',
+  'Мінітест',
+  'Підсумок',
+]);
+const missionExperiment = ref<HTMLElement>();
 const practiceHeading = ref<HTMLElement>();
-async function startPoster() {
+async function startMission() {
   p.value.theory = true;
   stage.value = 1;
   await nextTick();
-  document.getElementById('club-poster-title')?.focus();
+  missionExperiment.value?.querySelector('h2')?.focus();
 }
-async function writePoster() {
+async function writeMissionCode() {
+  p.value.theory = true;
   p.value.demo = true;
   stage.value = 2;
   await nextTick();
@@ -119,7 +146,7 @@ function finish() {
           active: stage === i,
           done: [p.theory, p.demo, p.practice, p.quizPassed, p.completed][i],
         }"
-        :disabled="posterMission && i >= 2 && !canWritePoster"
+        :disabled="Boolean(mission) && i >= 2 && !canOpenPractice"
         :aria-current="stage === i ? 'step' : undefined"
         @click="stage = i"
       >
@@ -131,16 +158,16 @@ function finish() {
         >{{ step }}<small>{{ ['10', '5–10', '10–15', '5', '5'][i] }} хв</small>
       </button>
     </nav>
-    <section v-if="stage === 0 && posterMission" class="card mission-intro">
-      <div class="eyebrow">ТВОЯ ПЕРША МІСІЯ</div>
-      <h2>Афіша клубу</h2>
-      <p>
-        Клубу потрібна афіша. Спочатку склади назву й опис із блоків, а тоді
-        напиши HTML для своєї події. Заголовок
+    <section v-if="stage === 0 && mission" class="card mission-intro">
+      <div class="eyebrow">{{ lesson.id === 2 ? 'ТВОЯ ПЕРША МІСІЯ' : 'МІСІЯ' }}</div>
+      <h2>{{ mission.title }}</h2>
+      <p>{{ mission.intro }}</p>
+      <p v-if="lesson.id === 2">
+        Заголовок
         <code>&lt;h1&gt;</code> називає подію, а абзац
         <code>&lt;p&gt;</code> додає подробиці.
       </p>
-      <button class="btn btn-primary" @click="startPoster">
+      <button class="btn btn-primary" @click="startMission">
         Почати місію<ArrowRight :size="16" />
       </button>
     </section>
@@ -167,7 +194,7 @@ function finish() {
           <pre v-if="block.code"><code>{{ block.code }}</code></pre>
         </article>
         <button
-          v-if="!posterMission"
+          v-if="!mission"
           class="btn btn-primary"
           @click="
             p.theory = true;
@@ -179,12 +206,18 @@ function finish() {
       </div>
     </div>
     <div v-else-if="stage === 1">
-      <ClubPoster v-if="posterMission" @continue="writePoster" />
+      <div v-if="mission" ref="missionExperiment">
+        <component :is="mission.component" @continue="writeMissionCode" />
+        <details v-if="lesson.id === 5" class="mission-extra">
+          <summary>Спробувати інші налаштування Flexbox</summary>
+          <ConceptDemo :lesson-id="lesson.id" />
+        </details>
+      </div>
       <WebDemo v-else-if="lesson.id === 1" /><ConceptDemo
         v-else
         :lesson-id="lesson.id"
       />
-      <div v-if="!posterMission" class="stage-bottom">
+      <div v-if="!mission" class="stage-bottom">
         <p>Спробуй кілька варіантів. Що змінилося і чому?</p>
         <button
           class="btn btn-primary"
@@ -203,8 +236,8 @@ function finish() {
           <div>
             <div class="eyebrow">
               {{
-                posterMission
-                  ? 'МІСІЯ «АФІША КЛУБУ» · КРОК 2 З 2'
+                mission
+                  ? `МІСІЯ «${mission.title.toUpperCase()}» · КРОК 2 З 2`
                   : 'ТВОЄ ЗАВДАННЯ · 10–15 ХВ'
               }}
             </div>
@@ -212,9 +245,7 @@ function finish() {
               {{
                 lesson.id === 6
                   ? 'Створи сайт на власну тему'
-                  : posterMission
-                    ? 'Напиши HTML для своєї афіші'
-                    : 'Час написати свій код'
+                  : (mission?.practiceTitle ?? 'Час написати свій код')
               }}
             </h2>
           </div>
@@ -228,6 +259,7 @@ function finish() {
           :key="exercise.id"
           v-model="code"
           :exercise="exercise"
+          :initial-tab="lesson.id === 5 ? 'css' : 'html'"
           @passed="passed"
       /></template>
       <div class="stage-bottom">
@@ -326,3 +358,14 @@ function finish() {
     </div>
   </div>
 </template>
+
+<style scoped>
+.mission-extra {
+  margin: 16px 0;
+}
+.mission-extra summary {
+  margin-bottom: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+</style>
