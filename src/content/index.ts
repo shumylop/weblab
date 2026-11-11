@@ -4,5 +4,6 @@ import three from './lessons/lesson-03';
 import four from './lessons/lesson-04';
 import five from './lessons/lesson-05';
 import six from './lessons/lesson-06';
+import seven from './lessons/lesson-07';
 import type { Lesson } from '../types';
-export const lessons: Lesson[] = [one, two, three, four, five, six];
+export const lessons: Lesson[] = [one, two, three, four, five, six, seven];

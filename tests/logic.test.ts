@@ -21,8 +21,8 @@ const check = (id: number, html: string, css = '') =>
 const allPass = (id: number, html: string, css = '') =>
   check(id, html, css).every((r) => r.passed);
 describe('Навчальний контент', () => {
-  it('містить шість повних уроків і 30 коректних запитань', () => {
-    expect(lessons).toHaveLength(6);
+  it('містить сім повних уроків із коректними запитаннями', () => {
+    expect(lessons).toHaveLength(7);
     for (const l of lessons) {
       expect(l.theoryBlocks.length).toBeGreaterThanOrEqual(3);
       expect(l.interactiveExercises.length).toBeGreaterThan(0);

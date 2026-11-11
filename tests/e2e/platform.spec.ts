@@ -16,15 +16,15 @@ async function edit(
     .getByRole('button', { name: 'Перевірити завдання', exact: true })
     .click();
 }
-test('головна та шість модулів без помилок', async ({ page }) => {
+test('головна та сім модулів без помилок', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toContainText(
     'Від першого',
   );
-  await expect(page.locator('.module-card')).toHaveCount(6);
-  for (let id = 1; id <= 6; id++) {
+  await expect(page.locator('.module-card')).toHaveCount(7);
+  for (let id = 1; id <= 7; id++) {
     await page.goto(`/#/lesson/${id}`);
     await expect(page.locator('.theory-block')).toHaveCount(id === 1 ? 4 : 3);
     await expect(page.locator('.stage-nav button')).toHaveCount(5);
@@ -233,6 +233,70 @@ test('порятунок сайту: прогноз, дві ширини й са
   ).toBeVisible();
   await page.getByRole('button', { name: 'Ширина комп’ютера' }).click();
   await expect.poll(previewOverflows).toBe(false);
+});
+test('Баг-детектив: порівняння, виправлення і завершення модуля', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/#/roadmap');
+  await page.getByRole('link', { name: /МОДУЛЬ 07.*Баг-детектив/ }).click();
+  await expect(page.getByRole('button', { name: /Полагодь картку/ })).toBeDisabled();
+  await page.getByRole('button', { name: 'Почати місію' }).click();
+
+  const reference = page.frameLocator('iframe[title="Зразок афіші"]');
+  const poster = page.frameLocator('iframe[title="Твоя афіша"]');
+  const pictureLoaded = (frame: typeof poster) =>
+    frame.getByRole('img').evaluate((img: HTMLImageElement) => img.naturalWidth > 0);
+  await expect(reference.getByRole('heading', { name: 'Ніч у горах' })).toBeVisible();
+  await expect.poll(() => pictureLoaded(reference)).toBe(true);
+  await expect(poster.getByRole('heading')).toHaveCount(0);
+  await expect.poll(() => pictureLoaded(poster)).toBe(false);
+  await expect(poster.getByText('Субота')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect.poll(() =>
+    page.locator('html').evaluate((el) => el.scrollWidth <= el.clientWidth),
+  ).toBe(true);
+
+  await page.getByRole('button', { name: '<title>Ніч у горах</title>', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Згадай' })).toBeVisible();
+  await expect(page.getByText('Виправлено 0 з 3')).toBeVisible();
+  await page.getByRole('button', { name: '<h1>Ніч у горах</h1>', exact: true }).press('Enter');
+  await expect(poster.getByRole('heading', { name: 'Ніч у горах' })).toBeVisible();
+  await page.getByRole('button', { name: 'src="hobby.svg"', exact: true }).click();
+  await expect.poll(() => pictureLoaded(poster)).toBe(true);
+  await page.getByRole('button', { name: '.poster-badge', exact: true }).click();
+  await expect(poster.getByText('Субота')).toHaveCSS('background-color', 'rgb(251, 230, 175)');
+  const practice = page.getByRole('button', { name: 'Полагодити іншу картку' });
+  await expect(practice).toBeFocused();
+  await practice.press('Enter');
+
+  const check = page.getByRole('button', { name: 'Перевірити завдання' });
+  await check.click();
+  await expect(page.locator('.check-results li.passed')).toHaveCount(0);
+  const html = page.getByRole('textbox', { name: 'HTML-редактор' });
+  await html.fill((await html.inputValue())
+    .replace('<!-- Тут має бути назва прогулянки -->', '<h2>Прогулянка стежкою</h2>')
+    .replace('hobyy.svg', './hobby.svg'));
+  await page.getByRole('button', { name: 'CSS', exact: true }).click();
+  const css = page.getByRole('textbox', { name: 'CSS-редактор' });
+  await css.fill((await css.inputValue()).replace('.card-bagde', '.card-badge'));
+  await check.click();
+  await expect(page.locator('.check-results li.passed')).toHaveCount(3);
+
+  await page.getByRole('button', { name: 'До мінітесту' }).click();
+  for (const answer of [
+    'Назвати одну видиму відмінність',
+    'h2',
+    'Не збігається назва файлу',
+    'У назвах різний порядок літер',
+    'Виправити одне місце й одразу глянути на результат',
+  ]) {
+    await page.locator('.quiz-options').getByRole('button', { name: new RegExp(answer + '$') }).click();
+    await page.getByRole('button', { name: 'Перевірити відповідь' }).click();
+    await page.getByRole('button', { name: /Наступне питання|Побачити результат/ }).click();
+  }
+  await page.getByRole('button', { name: 'До підсумку' }).click();
+  await page.getByRole('button', { name: 'Завершити модуль' }).click();
+  await expect(page.getByRole('button', { name: 'Модуль завершено' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Модуль завершено' })).toBeVisible();
 });
 test('усі CSS та HTML вправи мають робочі перевірки', async ({ page }) => {
   const content =

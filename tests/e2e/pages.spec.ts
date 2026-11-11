@@ -13,7 +13,7 @@ test('production під вкладеним шляхом: ресурси, уро�
   await expect(page.getByRole('heading', { level: 1 })).toContainText(
     'Від першого',
   );
-  await expect(page.locator('.module-card')).toHaveCount(6);
+  await expect(page.locator('.module-card')).toHaveCount(7);
   await page.locator('.module-card').nth(2).click();
   await page.reload();
   await expect(page.getByRole('heading', { level: 1 })).toContainText(

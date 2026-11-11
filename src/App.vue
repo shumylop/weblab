@@ -27,6 +27,7 @@ import {
   CheckCircle2,
   CircleHelp,
   ShieldCheck,
+  Search,
 } from 'lucide-vue-next';
 import { lessons } from './content';
 import {
@@ -112,7 +113,7 @@ const nav = [
     icon: Trophy,
   },
 ];
-const icons = [Globe2, FileCode2, Image, Palette, PanelsTopLeft, Rocket];
+const icons = [Globe2, FileCode2, Image, Palette, PanelsTopLeft, Rocket, Search];
 const done = computed(
   () => lessons.filter((l) => profile.value.lessons[l.id]?.completed).length,
 );
@@ -444,7 +445,7 @@ function status(id: number) {
               <div class="eyebrow">ВІД ЦІКАВОСТІ ДО ВЛАСНОГО САЙТУ</div>
               <h1>Твій навчальний маршрут</h1>
               <p class="muted">
-                Шість кроків. Жодних закритих дверей. Рухайся у власному темпі.
+                Рухайся у власному темпі. Усі модулі відкриті.
               </p>
             </div>
             <div class="roadmap-overview card">

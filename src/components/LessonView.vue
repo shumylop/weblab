@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, ref, type Component } from 'vue';
 import {
   ArrowLeft,
   ArrowRight,
@@ -24,7 +24,16 @@ import ConceptDemo from './ConceptDemo.vue';
 import UrlExercise from './UrlExercise.vue';
 import ClubPoster from './ClubPoster.vue';
 import MobileRescue from './MobileRescue.vue';
-const missions = {
+import BugDetective from './BugDetective.vue';
+interface Mission {
+  title: string;
+  intro: string;
+  experiment: string;
+  practice: string;
+  practiceTitle: string;
+  component: Component;
+}
+const missions: Partial<Record<number, Mission>> = {
   2: {
     title: 'Афіша клубу',
     intro: 'Клубу потрібна афіша. Спочатку склади назву й опис із блоків, а тоді напиши HTML для своєї події.',
@@ -41,15 +50,19 @@ const missions = {
     practiceTitle: 'Полагодь макет колекції ідей',
     component: MobileRescue,
   },
-} as const;
+  7: {
+    title: 'Баг-детектив',
+    intro: 'Афіша гуртка зламалася. Порівняй її зі зразком, знайди три причини й полагодь іншу картку в редакторі.',
+    experiment: 'Знайди помилки',
+    practice: 'Полагодь картку',
+    practiceTitle: 'Полагодь картку «Прогулянка стежкою»',
+    component: BugDetective,
+  },
+};
 const props = defineProps<{ lesson: Lesson }>();
 const p = computed(() => progress(props.lesson.id));
 const exercise = computed(() => props.lesson.interactiveExercises[0]);
-const mission = computed(() =>
-  props.lesson.id === 2 || props.lesson.id === 5
-    ? missions[props.lesson.id]
-    : undefined,
-);
+const mission = computed(() => missions[props.lesson.id]);
 // Existing work and completed demonstrations keep their place in the module.
 const canOpenPractice = computed(
   () =>
@@ -160,7 +173,7 @@ function finish() {
     </nav>
     <section v-if="stage === 0 && mission" class="card mission-intro">
       <div class="eyebrow">{{ lesson.id === 2 ? 'ТВОЯ ПЕРША МІСІЯ' : 'МІСІЯ' }}</div>
-      <h2>{{ mission.title }}</h2>
+      <h2 v-if="mission.title !== lesson.title">{{ mission.title }}</h2>
       <p>{{ mission.intro }}</p>
       <p v-if="lesson.id === 2">
         Заголовок

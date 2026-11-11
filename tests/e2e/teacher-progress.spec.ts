@@ -63,7 +63,7 @@ for (const role of ['teacher', 'student'] as const) {
                 username: 'comet',
                 nickname: 'Комета',
                 enabled: true,
-                completedLessonIds: listRequests === 1 ? [1, 2] : [1, 2, 3],
+                completedLessonIds: listRequests === 1 ? [1, 2] : [1, 2, 7],
               },
               {
                 id: 'b',
@@ -94,7 +94,7 @@ for (const role of ['teacher', 'student'] as const) {
     const comet = page.locator('.student-row').filter({ hasText: '@comet' });
     const orbit = page.locator('.student-row').filter({ hasText: '@orbit' });
     await expect(
-      comet.getByRole('heading', { name: 'Пройдено 2 з 6 уроків' }),
+      comet.getByRole('heading', { name: 'Пройдено 2 з 7 уроків' }),
     ).toBeVisible();
     await expect(
       comet.getByRole('list', { name: 'Пройдені уроки' }),
@@ -103,8 +103,9 @@ for (const role of ['teacher', 'student'] as const) {
     await expect(orbit).toContainText('Ще немає завершених уроків.');
     await page.getByRole('button', { name: 'Оновити', exact: true }).click();
     await expect(
-      comet.getByRole('heading', { name: 'Пройдено 3 з 6 уроків' }),
+      comet.getByRole('heading', { name: 'Пройдено 3 з 7 уроків' }),
     ).toBeVisible();
     await expect(comet.getByRole('listitem')).toHaveCount(3);
+    await expect(comet.getByRole('listitem').last()).toContainText('Баг-детектив');
   });
 }
