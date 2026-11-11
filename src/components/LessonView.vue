@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import {
   ArrowLeft,
   ArrowRight,
@@ -22,15 +22,28 @@ import Quiz from './Quiz.vue';
 import WebDemo from './WebDemo.vue';
 import ConceptDemo from './ConceptDemo.vue';
 import UrlExercise from './UrlExercise.vue';
+import ClubPoster from './ClubPoster.vue';
 const props = defineProps<{ lesson: Lesson }>();
 const p = computed(() => progress(props.lesson.id));
+const exercise = computed(() => props.lesson.interactiveExercises[0]);
+const posterMission = computed(() => props.lesson.id === 2);
+// Existing work and completed demonstrations keep their place in the module.
+const canWritePoster = computed(
+  () =>
+    p.value.demo ||
+    p.value.practice ||
+    p.value.completed ||
+    Boolean(profile.value.codes[exercise.value.id]),
+);
 const stage = computed({
-  get: () => p.value.stage,
+  get: () =>
+    posterMission.value && p.value.stage >= 2 && !canWritePoster.value
+      ? 1
+      : p.value.stage,
   set: (v) => {
     p.value.stage = v;
   },
 });
-const exercise = computed(() => props.lesson.interactiveExercises[0]);
 const code = computed({
   get: () =>
     profile.value.codes[exercise.value.id] ?? {
@@ -41,7 +54,24 @@ const code = computed({
     profile.value.codes[exercise.value.id] = v;
   },
 });
-const steps = ['Знайомство', 'Експеримент', 'Практика', 'Мінітест', 'Підсумок'];
+const steps = computed(() =>
+  posterMission.value
+    ? ['Знайомство', 'Збери афішу', 'Напиши HTML', 'Мінітест', 'Підсумок']
+    : ['Знайомство', 'Експеримент', 'Практика', 'Мінітест', 'Підсумок'],
+);
+const practiceHeading = ref<HTMLElement>();
+async function startPoster() {
+  p.value.theory = true;
+  stage.value = 1;
+  await nextTick();
+  document.getElementById('club-poster-title')?.focus();
+}
+async function writePoster() {
+  p.value.demo = true;
+  stage.value = 2;
+  await nextTick();
+  practiceHeading.value?.focus();
+}
 const completionMessage = ref('');
 const nextLesson = computed(
   () => lessons[lessons.findIndex((l) => l.id === props.lesson.id) + 1],
@@ -89,6 +119,7 @@ function finish() {
           active: stage === i,
           done: [p.theory, p.demo, p.practice, p.quizPassed, p.completed][i],
         }"
+        :disabled="posterMission && i >= 2 && !canWritePoster"
         :aria-current="stage === i ? 'step' : undefined"
         @click="stage = i"
       >
@@ -100,6 +131,19 @@ function finish() {
         >{{ step }}<small>{{ ['10', '5–10', '10–15', '5', '5'][i] }} хв</small>
       </button>
     </nav>
+    <section v-if="stage === 0 && posterMission" class="card mission-intro">
+      <div class="eyebrow">ТВОЯ ПЕРША МІСІЯ</div>
+      <h2>Афіша клубу</h2>
+      <p>
+        Клубу потрібна афіша. Спочатку склади назву й опис із блоків, а тоді
+        напиши HTML для своєї події. Заголовок
+        <code>&lt;h1&gt;</code> називає подію, а абзац
+        <code>&lt;p&gt;</code> додає подробиці.
+      </p>
+      <button class="btn btn-primary" @click="startPoster">
+        Почати місію<ArrowRight :size="16" />
+      </button>
+    </section>
     <div v-if="stage === 0" class="theory-layout">
       <aside class="objectives card">
         <div class="eyebrow">СЬОГОДНІ ТИ ЗМОЖЕШ</div>
@@ -123,6 +167,7 @@ function finish() {
           <pre v-if="block.code"><code>{{ block.code }}</code></pre>
         </article>
         <button
+          v-if="!posterMission"
           class="btn btn-primary"
           @click="
             p.theory = true;
@@ -134,11 +179,12 @@ function finish() {
       </div>
     </div>
     <div v-else-if="stage === 1">
-      <WebDemo v-if="lesson.id === 1" /><ConceptDemo
+      <ClubPoster v-if="posterMission" @continue="writePoster" />
+      <WebDemo v-else-if="lesson.id === 1" /><ConceptDemo
         v-else
         :lesson-id="lesson.id"
       />
-      <div class="stage-bottom">
+      <div v-if="!posterMission" class="stage-bottom">
         <p>Спробуй кілька варіантів. Що змінилося і чому?</p>
         <button
           class="btn btn-primary"
@@ -155,12 +201,20 @@ function finish() {
       <UrlExercise v-if="lesson.id === 1" @passed="passed" /><template v-else
         ><section class="practice-brief">
           <div>
-            <div class="eyebrow">ТВОЄ ЗАВДАННЯ · 10–15 ХВ</div>
-            <h2>
+            <div class="eyebrow">
+              {{
+                posterMission
+                  ? 'МІСІЯ «АФІША КЛУБУ» · КРОК 2 З 2'
+                  : 'ТВОЄ ЗАВДАННЯ · 10–15 ХВ'
+              }}
+            </div>
+            <h2 ref="practiceHeading" tabindex="-1">
               {{
                 lesson.id === 6
                   ? 'Створи сайт на власну тему'
-                  : 'Час написати свій код'
+                  : posterMission
+                    ? 'Напиши HTML для своєї афіші'
+                    : 'Час написати свій код'
               }}
             </h2>
           </div>

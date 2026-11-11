@@ -67,8 +67,42 @@ test('URL-вправа та збереження поточного етапу',
     page.getByRole('heading', { name: 'Розбери URL' }),
   ).toBeVisible();
 });
-test('реальна перевірка HTML, preview і перезавантаження', async ({ page }) => {
-  await openPractice(page, 2);
+test('Афіша клубу: складання, самостійний HTML і збереження', async ({
+  page,
+}) => {
+  await page.goto('/#/lesson/2');
+  await expect(
+    page.getByRole('button', { name: /Напиши HTML/ }),
+  ).toBeDisabled();
+  await page.getByRole('button', { name: 'Почати місію' }).click();
+  await page.getByLabel('Тема клубу').selectOption({ label: 'Анімація' });
+  await page.getByRole('button', { name: /Додати опис/ }).click();
+  await page.getByRole('button', { name: /Додати заголовок/ }).click();
+  const poster = page.frameLocator('iframe[title="Перегляд афіші клубу"]');
+  await expect(
+    poster.getByRole('heading', { name: 'Мультфільм за вечір' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Перевірити афішу' }).click();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Підніми заголовок' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Написати свій HTML' }),
+  ).toHaveCount(0);
+  await page
+    .getByRole('button', { name: 'Перемістити заголовок вгору' })
+    .press('Enter');
+  await expect(poster.locator('body > :first-child')).toHaveText(
+    'Мультфільм за вечір',
+  );
+  await page.getByRole('button', { name: 'Перевірити афішу' }).click();
+  await page.getByRole('button', { name: 'Написати свій HTML' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Напиши HTML для своєї афіші' }),
+  ).toBeFocused();
+  await expect(
+    page.getByRole('textbox', { name: 'HTML-редактор' }),
+  ).not.toHaveValue(/Мультфільм за вечір/);
   await page
     .getByRole('button', { name: 'Перевірити завдання', exact: true })
     .click();
@@ -98,6 +132,39 @@ test('реальна перевірка HTML, preview і перезаванта�
   await expect(
     page.getByRole('textbox', { name: 'HTML-редактор' }),
   ).toHaveValue(/Мій космос/);
+});
+test('наявна чернетка HTML відкривається без повторного складання', async ({
+  page,
+}) => {
+  await page.addInitScript((key) => {
+    const profile = {
+      id: 'legacy-html',
+      name: 'Дослідник',
+      currentLesson: 2,
+      codes: { html: { html: '<h1>Моя попередня робота</h1>', css: '' } },
+      projects: [],
+      achievements: [],
+      lessons: {
+        2: {
+          stage: 2,
+          theory: false,
+          demo: false,
+          practice: false,
+          quiz: 0,
+          quizPassed: false,
+          completed: false,
+        },
+      },
+    };
+    localStorage.setItem(
+      key,
+      JSON.stringify({ version: 1, activeId: profile.id, profiles: [profile] }),
+    );
+  }, key);
+  await page.goto('/#/lesson/2');
+  await expect(
+    page.getByRole('textbox', { name: 'HTML-редактор' }),
+  ).toHaveValue('<h1>Моя попередня робота</h1>');
 });
 test('усі CSS та HTML вправи мають робочі перевірки', async ({ page }) => {
   const content =

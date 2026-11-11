@@ -3769,3 +3769,15 @@ main {
   font-size: 12px;
   border-radius: 6px;
 }
+
+.mission-intro {
+  background: #f6f0ff;
+  border-color: #e5d7f8;
+  margin-bottom: 24px;
+}
+.mission-intro h2 {
+  margin: 8px 0;
+}
+.mission-intro p {
+  margin: 0 0 14px;
+}
